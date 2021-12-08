@@ -1,1 +1,16 @@
 
+org 100h
+
+;mov ax, 24  
+;dec ax
+;call square
+
+;out 199, ax  
+;ret
+
+;square proc
+;        mul ax
+;        out 199, ax;
+
+
+;ret   
