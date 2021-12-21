@@ -1,27 +1,34 @@
+; 8086 Assembly, emu8086
+
 data segment       
     new_line db 13, 10, "$"
     
-    game_draw db "_|_|_", 13, 10
-              db "_|_|_", 13, 10
-              db "_|_|_", 13, 10, "$"    
-                  
-    game_pointer db 9 DUP(?)  
+    game_menu db "0 1 2 3 4 5", 13, 10
+              db "6 7 8 9 a b", 13, 10
+              db "c d e f g h", 13, 10
+              db "i j k l m n", 13, 10
+              db "o p q r s t", 13, 10
+              db "u v w x y z", 13, 10, "$"
+              
+    game_draw db "_|_|_|_|_|_", 13, 10
+              db "_|_|_|_|_|_", 13, 10
+              db "_|_|_|_|_|_", 13, 10
+              db "_|_|_|_|_|_", 13, 10
+              db "_|_|_|_|_|_", 13, 10
+              db "_|_|_|_|_|_", 13, 10, "$"  
+                    
+    game_pointer db 36 DUP(?) ; 
     
     win_flag db 0 
     player db "0$" 
     
-    game_over_message db "Game ended", 13, 10, "$" 
-    game_draw_message db "The game is draw!", 13, 10, "$" ;game draw message  
+    manual db "Manual", 13, 10, "$"
+    game_over_message db "The Game has Ended", 13, 10, "$"
+    game_draw_message db "The game is draw!", 13, 10, "$" ;game draw message      
     game_start_message db "Welcome", 13, 10, "$"
     player_message db "PLAYER $"   
     win_message db " WIN!$"   
-    type_message db "TYPE A POSITION: $"  
-    tra db 'want to play again? (y/n):$'
-    drw db "the game is draw! $"
-      
-    
-    
-
+    type_message db "TYPE A POSITION: $"
 ends
 
 stack segment
@@ -31,18 +38,17 @@ ends
 extra segment
     
 ends
-  
+
 code segment
-   
 start:
     ; set segment registers
-    mov     ax, @data
+    mov     ax, data
     mov     ds, ax
     mov     ax, extra
     mov     es, ax
-    mov     bp,9
+
     ; game start   
-    call    set_game_pointer    
+    call    set_game_pointer;Here!!!!!!!!!!    
             
 main_loop:  
     call    clear_screen   
@@ -51,42 +57,71 @@ main_loop:
     call    print
     
     lea     dx, new_line
-    call    print                      
+    call    print 
     
-    lea     dx, player_message
+    lea     dx, manual
     call    print
-    lea     dx, player
-    call    print  
+    
+    lea     dx, game_menu
+    call    print
     
     lea     dx, new_line
     call    print    
     
+    lea     dx, player_message
+    call    print 
+    lea     dx, player
+    call    print 
+    
+    lea     dx, new_line
+    call    print
+    
     lea     dx, game_draw
-    call    print    
+    call    print 
     
     lea     dx, new_line
     call    print    
     
     lea     dx, type_message    
     call    print            
+        
+    
+    
+    
+    
+      
+    
+    
                         
     ; read draw position                   
     call    read_keyboard
                        
-    ; calculate draw position                   
-    sub     al, 49               
-    mov     bh, 0
-    mov     bl, al 
-    call update_draw
-   
-                                   
-                                 
-   call    check  
+    ; calculate draw position
+    cmp     al, 96
+    ja      letters
+    
+    cmp     al, 58
+    jb      num                   
+    
+    num:
+    sub     al, 48 
+    jmp     cont
+        
+    letters:
+    sub     al, 87
+    jmp     cont    
+    
+    cont:                         
+    mov     bh, 0     
+    mov     bl, al                                  
+                                  
+    call    update_draw                                    
+                                                          
+    call    check  
                        
     ; check if game ends                   
-    cmp     win_flag, 1 
-
-    je     game_over ;STEPH CHANGES  
+    cmp     win_flag, 1  
+    je      game_over  
     
     call    change_player 
     
@@ -94,7 +129,8 @@ main_loop:
     cmp bp,0
     je game_drawn
             
-   jmp      main_loop 
+            
+    jmp     main_loop   
 
 
 change_player:   
@@ -102,35 +138,35 @@ change_player:
     xor     ds:[si], 1 
     
     ret
-  update_draw:
+      
+ 
+update_draw:
     mov     bl, game_pointer[bx]
     mov     bh, 0
     
     lea     si, player
     
     cmp     ds:[si], "0"
-    je      draw_x 
-        
+    je      draw_x     
                   
     cmp     ds:[si], "1"
     je      draw_o              
                   
     draw_x:
     mov     cl, "x"
-    jmp     update 
-    
+    jmp     update
 
     draw_o:          
     mov     cl, "o"  
     jmp     update    
-     
-                  
-                   
+          
     update:         
-    mov     ds:[bx], cl 
+    mov     ds:[bx], cl
+      
     ret 
-        
-   check:
+       
+       
+check:
     call    check_line
     ret     
        
@@ -139,51 +175,110 @@ check_line:
     mov     cx, 0
     
     check_line_loop:     
-    cmp     cx, 0
+    cmp     cx, 0    ;move to first line if cx = 0
     je      first_line
     
     cmp     cx, 1
+    ;cmp     win_flag, 1
+    ;dec     cx
+    ;inc     si
+    ;jmp     do_check_line
     je      second_line
     
     cmp     cx, 2
-    je      third_line  
+    je      third_line
+    
+    cmp     cx, 3
+    je      fourth_line
+    
+    cmp     cx, 4
+    je      fifth_line 
+    
+    cmp     cx, 5
+    je      sixth_line   
+      
+      
     
     call    check_column
     ret    
         
     first_line:    
-    mov     si, 0   
+    mov     si, 0        ;perform after getting cx = 0
     jmp     do_check_line   
 
     second_line:    
-    mov     si, 3
+    mov     si, 6
     jmp     do_check_line
     
     third_line:    
-    mov     si, 6
+    mov     si, 12
     jmp     do_check_line        
 
+    fourth_line:    
+    mov     si, 18
+    jmp     do_check_line
+    
+    fifth_line:    
+    mov     si, 24
+    jmp     do_check_line        
+    
+    sixth_line:    
+    mov     si, 30
+    jmp     do_check_line        
+     
+
+    
     do_check_line:
     inc     cx
-  
-    mov     bh, 0
-    mov     bl, game_pointer[si]
-    mov     al, ds:[bx]
-    cmp     al, "_" 
+    jmp     do_check_line1
     
+    do_check_line1:
+    mov     bh, 0
+    mov     bl, game_pointer[si] ; si = 0 => =game_pointer[0]
+    mov     al, ds:[bx]; bx = 0(bh = 0, bl = game_pointer[0])
+    cmp     al, "_"         ;check if ax = "_"(it's not)
+    je      IncSi
+        
+    inc     si              ;si = 1
+    mov     bl, game_pointer[si] ; mov into bl game_pointer[1] => bx = (bh = 0, bl = game_pointer[1])  
+    cmp     al, ds:[bx]
+    jne     IncSi 
+    
+    jmp     cont1
+    IncSi:
+    inc     si
+    
+    cmp     si, 3
     je      check_line_loop
     
-    inc     si
-    mov     bl, game_pointer[si]    
-    cmp     al, ds:[bx] 
+    cmp     si, 9
+    je      check_line_loop
     
-    jne     check_line_loop 
-   
+    cmp     si, 15
+    je      check_line_loop
+    
+    cmp     si, 21
+    je      check_line_loop
+    
+    cmp     si, 27
+    je      check_line_loop
+    
+    cmp     si, 33
+    je      check_line_loop
+    
+    jmp     do_check_line1
+    cont1:
+    cmp     al, ds:[bx]  
+    jne     check_line_loop ;jump not equal
       
-    inc     si
-    mov     bl, game_pointer[si]  
-    cmp     al, ds:[bx] 
+    inc     si ;si = 2
+    mov     bl, game_pointer[si]  ; = game_pointer[2]
+    cmp     al, ds:[bx]
+    jne     check_line_loop  
     
+    inc     si ;si = 2
+    mov     bl, game_pointer[si]  ; = game_pointer[2]
+    cmp     al, ds:[bx]
     jne     check_line_loop
                  
                          
@@ -205,6 +300,15 @@ check_column:
     cmp     cx, 2
     je      third_column  
     
+    cmp     cx, 3
+    je      fourth_column  
+    
+    cmp     cx, 4
+    je      fifth_column  
+                          
+    cmp     cx, 5
+    je      sixth_column  
+                          
     call    check_diagonal
     ret    
         
@@ -220,25 +324,71 @@ check_column:
     mov     si, 2
     jmp     do_check_column        
 
+    fourth_column:    
+    mov     si, 3
+    jmp     do_check_column        
+
+    fifth_column:    
+    mov     si, 4
+    jmp     do_check_column        
+
+    sixth_column:    
+    mov     si, 5
+    jmp     do_check_column        
+
+    
     do_check_column:
-    inc     cx
+    inc     cx 
+    jmp     do_check_column1
   
-    mov     bh, 0
-    mov     bl, game_pointer[si]
-    mov     al, ds:[bx]
-    cmp     al, "_"
+    do_check_column1:
+    mov     bh, 0 ; starting point
+    mov     bl, game_pointer[si]; access position si in the table
+    mov     al, ds:[bx];(bx = bh and bl: bh = 0, bl = "x"
+    cmp     al, "_"  
+    je      IncSi1
+   
+    add     si, 6
+    mov     bl, game_pointer[si];bx = bh, bl:bh = 0, bl = "x"    
+    cmp     al, ds:[bx]
+    jne     IncSi1  ; jump if NOT equal 
+    
+    jmp     cont2
+    IncSi1:
+    add     si, 6 
+    
+    cmp     si, 18
     je      check_column_loop
     
-    add     si, 3
+    cmp     si, 19
+    je      check_column_loop
+    
+    cmp     si, 20
+    je      check_column_loop
+    
+    cmp     si, 21
+    je      check_column_loop
+    
+    cmp     si, 22
+    je      check_column_loop
+    
+    cmp     si, 23
+    je      check_column_loop
+    
+    jmp     do_check_column1 
+    
+    cont2:
+    add     si, 6
     mov     bl, game_pointer[si]    
     cmp     al, ds:[bx]
     jne     check_column_loop 
       
-    add     si, 3
-    mov     bl, game_pointer[si]  
+    add     si, 6
+    mov     bl, game_pointer[si]    
     cmp     al, ds:[bx]
-    jne     check_column_loop
-                 
+    jne     check_column_loop 
+      
+    
                          
     mov     win_flag, 1
     ret        
@@ -252,18 +402,67 @@ check_diagonal:
     je      first_diagonal
     
     cmp     cx, 1
+    je      first_diagonal                         
+    
+    cmp     cx, 2
+    je      first_diagonal
+    
+    cmp     cx, 6
+    je      first_diagonal
+    
+    cmp     cx, 7
+    je      first_diagonal
+    
+    cmp     cx, 8
+    je      first_diagonal
+    
+    cmp     cx, 12
+    je      first_diagonal
+    
+    cmp     cx, 13
+    je      first_diagonal
+    
+    cmp     cx, 14
+    je      first_diagonal
+    
+    cmp     cx, 3
+    je      second_diagonal                         
+                             
+    cmp     cx, 4
+    je      second_diagonal                         
+                             
+    cmp     cx, 5
+    je      second_diagonal                         
+                             
+    cmp     cx, 9
+    je      second_diagonal                         
+                             
+    cmp     cx, 10
+    je      second_diagonal                         
+                             
+    cmp     cx, 11
     je      second_diagonal                         
     
+    cmp     cx, 15
+    je      second_diagonal                         
+                             
+    cmp     cx, 16
+    je      second_diagonal                         
+                             
+    cmp     cx, 17
+    je      second_diagonal                         
+    
+        
     ret    
         
     first_diagonal:    
-    mov     si, 0                
-    mov     dx, 4 ;jump size
+    mov     si, cx                
+    mov     dx, 7 
     jmp     do_check_diagonal   
 
     second_diagonal:    
-    mov     si, 2
-    mov     dx, 2
+    mov     si, cx
+    mov     dx, 5
     jmp     do_check_diagonal       
 
     do_check_diagonal:
@@ -280,6 +479,11 @@ check_diagonal:
     cmp     al, ds:[bx]
     jne     check_diagonal_loop 
       
+    add     si, dx
+    mov     bl, game_pointer[si]  
+    cmp     al, ds:[bx]
+    jne     check_diagonal_loop 
+    
     add     si, dx
     mov     bl, game_pointer[si]  
     cmp     al, ds:[bx]
@@ -317,8 +521,10 @@ game_over:
     lea     dx, win_message
     call    print 
 
-    jmp     fim
- ;Added game drawn 
+    jmp     fim    
+    
+    
+    ;Added game drawn 
 game_drawn:        
     call    clear_screen   
     
@@ -341,29 +547,40 @@ game_drawn:
     call    print
 
     jmp     fim
-        
+  
+     
 set_game_pointer:
     lea     si, game_draw
     lea     bx, game_pointer          
               
-    mov     cx, 9   
+    mov     cx, 36;Changed cx from 9 to 36(Table Entries)   
     
     loop_1:
-    cmp     cx, 6
+    cmp     cx, 30;cx will be 30 after looping 6 times
     je      add_1                
     
-    cmp     cx, 3
+    cmp     cx, 24
+    je      add_1                
+    
+    cmp     cx, 18
+    je      add_1                
+    
+    cmp     cx, 12
     je      add_1
+    
+    cmp     cx, 6
+    je      add_1
+    
     
     jmp     add_2 
     
     add_1:
-    add     si, 1
+    add     si, 1  ;adds a row to game_draw
     jmp     add_2     
       
     add_2:                                
-    mov     ds:[bx], si 
-    add     si, 2
+    mov     ds:[bx], si; 
+    add     si, 2   ;xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx!!!!!!!!!!!
                         
     inc     bx               
     loop    loop_1 
@@ -372,7 +589,7 @@ set_game_pointer:
          
        
 print:      ; print dx content  
-    mov     ah, 9
+    mov     ah, 9;  changed from 9 to 36
     int     21h   
     
     ret 
@@ -390,25 +607,10 @@ clear_screen:       ; get and set video mode
     
 read_keyboard:  ; read keybord and return content in ah
     mov     ah, 1       
-    int     21h 
-    ret 
+    int     21h  
     
-;draw:
-;lea dx,drw
-;mov ah,9
-;int 21h  
-;jmp game_over             
-;ret 
-;draw_check:
-;call check
-;cmp     CX,0   
-;jb  change_player
-;mov win_flag,1
-;jmp update_draw 
-;jmp fim "
-
-
-         
+    ret      
+      
       
 fim:
     jmp     fim         
@@ -416,3 +618,5 @@ fim:
 code ends
 
 end start
+      
+     
